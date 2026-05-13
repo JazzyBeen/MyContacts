@@ -17,10 +17,8 @@ class ContactsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts.asStateFlow()
-    init {
-        loadContacts()
-    }
-    private fun loadContacts() {
+
+    fun loadContacts() {
         viewModelScope.launch {
             repository.getContacts().collect { contactsList ->
                 _contacts.value = contactsList
