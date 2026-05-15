@@ -8,14 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,83 +33,66 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.xs.mycontacts.domain.model.Contact
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactsScreen(
-    viewModel: ContactsViewModel = hiltViewModel()
+    viewModel: ContactsViewModel,
+    onDeleteDuplicatesClick: () -> Unit
 ) {
     val context = LocalContext.current
     val contacts by viewModel.contacts.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
-    var hasPermission by remember {
+    var hasPermissions by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
-                    PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CONTACTS) ==
-                    PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED
         )
     }
-    
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { 
-        permissionsMap ->
-        val readGranted = permissionsMap[Manifest.permission.READ_CONTACTS] == true
-        val writeGranted = permissionsMap[Manifest.permission.WRITE_CONTACTS] == true
-        hasPermission = readGranted && writeGranted
-        
-        if (hasPermission) {
+    ) { permissions ->
+        hasPermissions = permissions[Manifest.permission.READ_CONTACTS] == true &&
+                permissions[Manifest.permission.WRITE_CONTACTS] == true
+        if (hasPermissions) viewModel.loadContacts()
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasPermissions) {
+            permissionLauncher.launch(arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS))
+        } else {
             viewModel.loadContacts()
         }
     }
 
-    LaunchedEffect(Unit) { 
-        if (!hasPermission) {
-            permissionLauncher.launch(
-                arrayOf(Manifest.permission.READ_CONTACTS,
-                    Manifest.permission.WRITE_CONTACTS)
-            )
-        } else {
-            viewModel.loadContacts()
-        }
-    }
-    
     Scaffold(
-        topBar = {
-            TopAppBar(title = {Text("Контакты")})
+        topBar = { TopAppBar(title = { Text("Контакты") }) },
+        floatingActionButton = {
+            if (hasPermissions && contacts.isNotEmpty() && !isLoading) {
+                ExtendedFloatingActionButton(
+                    onClick = onDeleteDuplicatesClick,
+                    icon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                    text = { Text("Удалить дубликаты") }
+                )
+            }
         }
     ) { paddingValues ->
-        if (hasPermission) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(contacts) { contact ->
-                    ContactItem(contact = contact)
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            if (hasPermissions) {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(contacts) { contact -> ContactItem(contact) }
                 }
             }
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Button(onClick = {
-                    permissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.READ_CONTACTS,
-                            Manifest.permission.WRITE_CONTACTS
-                        )
-                    )
-                }) {
-                    Text("Разрешить доступ к контактам")
-                }
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
     }
@@ -120,23 +100,10 @@ fun ContactsScreen(
 
 @Composable
 fun ContactItem(contact: Contact) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = contact.name,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = contact.phoneNumber,
-                style = MaterialTheme.typography.bodyMedium
-            )
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = contact.name, style = MaterialTheme.typography.titleMedium)
+            Text(text = contact.phoneNumber, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
