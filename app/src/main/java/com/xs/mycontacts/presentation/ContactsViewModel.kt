@@ -15,8 +15,12 @@ import javax.inject.Inject
 class ContactsViewModel @Inject constructor(
     private val repository: ContactsRepository
 ) : ViewModel() {
+
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     fun loadContacts() {
         viewModelScope.launch {
@@ -24,5 +28,9 @@ class ContactsViewModel @Inject constructor(
                 _contacts.value = contactsList
             }
         }
+    }
+
+    fun setLoading(loading: Boolean) {
+        _isLoading.value = loading
     }
 }
