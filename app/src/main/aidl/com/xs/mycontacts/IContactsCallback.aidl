@@ -1,7 +1,7 @@
 package com.xs.mycontacts;
 
-interface IContactCallback {
+interface IContactsCallback {
     void onSuccess();
     void onNotFound();
-    void inError(String message);
+    void onError(String message);
 }
