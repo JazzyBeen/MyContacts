@@ -23,7 +23,7 @@ class ContactsRepositoryImpl @Inject constructor(
         val uri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
 
         val projection = arrayOf(
-            ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+            ContactsContract.CommonDataKinds.Phone._ID,
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
             ContactsContract.CommonDataKinds.Phone.NUMBER
         )
@@ -31,7 +31,7 @@ class ContactsRepositoryImpl @Inject constructor(
         val cursor = contentResolver.query(uri, projection, null, null, null)
 
         cursor?.use {
-            val idIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
+            val idIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone._ID)
             val nameIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
             val numberIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
 
